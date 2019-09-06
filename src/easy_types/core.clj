@@ -26,6 +26,7 @@
  (st/check `get-42))
 
 ;; Spec out a 0 arity function that will fail the spec
+;; The input to the fn will be a map of {:args :ret}
 (t/tc-ignore
  (s/fdef yget-42 :args (s/cat) :ret int? ;; :fn #(= 42 (:ret %))
          ))
@@ -36,9 +37,45 @@
  (st/instrument `yget-42)
  (st/check `yget-42))
 
-;; (t/Ann get-area )
-;; (defn get-area [{:keys [x y]}]
-;;   (* x y))
+;; https://github.com/typedclojure/core.typed-example/blob/master/src/fire/simulate.clj#L42
+(t/defalias Point
+  "Just a point."
+  '{:x t/Int
+    :y t/Int})
+
+;; (t/ann grid-from-fn [[Point -> State]
+;;                    & :optional {:rows Long, :cols Long :wind Wind}
+;;                    :mandatory {:q Number :p Number :f Number}
+;;                    -> Grid])
+
+(t/tc-ignore
+ (s/def ::x (s/and int? #(> % 0) #(< % 100)))
+ (s/def ::y (s/and int? #(> % 0) #(< % 100)))
+ (s/def ::point (s/keys :req-un [::x ::y])))
+;; We can ensure inputs match forms of data...nice!
+(t/tc-ignore (s/fdef get-area
+               :args (s/cat :m ::point)
+               :ret int?
+               :fn #(int? (:ret %))))
+(t/ann get-area [Point :-> t/Int])
+(defn get-area [{:keys [x y]}]
+  (* x y))
+
+(t/tc-ignore
+ (st/instrument `get-area)
+ ;; Interesting, found integer overflow, so would need to constrain x / y to max
+ (st/check `get-area)
+
+ (sg/generate (s/gen ::point))
+ (sg/sample (s/gen ::point)))
+
+(defn call-get-area []
+  ;; call with bad input, will produce error
+  ;; (get-area {:a 1 :b 2})
+  ;; (get-area {:x "oh" :y 2})
+  ;; good input will not
+  (get-area {:x 1 :y 2})
+  )
 
 (defn lint []
   (t/tc-ignore (st/instrument))
