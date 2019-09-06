@@ -13,6 +13,7 @@
 ;; Spec out a 0 arity function
 (t/tc-ignore
  (s/fdef get-42 :args (s/cat) :ret int? :fn #(= 42 (:ret %))))
+(t/ann get-42 [:-> t/Int])
 (defn get-42 [] 42)
 ;; instrument can apply to future invocations, but the return types
 ;; are only ever validated during the check calls (which also will
@@ -28,10 +29,16 @@
 (t/tc-ignore
  (s/fdef yget-42 :args (s/cat) :ret int? ;; :fn #(= 42 (:ret %))
          ))
+;; Raises a warning when lint is called, nice!
+(t/ann yget-42 [:-> t/Int])
 (defn yget-42 [] "42")
 (t/tc-ignore
  (st/instrument `yget-42)
  (st/check `yget-42))
+
+;; (t/Ann get-area )
+;; (defn get-area [{:keys [x y]}]
+;;   (* x y))
 
 (defn lint []
   (t/tc-ignore (st/instrument))
