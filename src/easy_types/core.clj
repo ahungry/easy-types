@@ -1,5 +1,7 @@
 (ns easy-types.core
+  {:lang :core.typed}
   (:require
+   [clojure.core.typed :as t]
    [clojure.repl :refer :all]
    [clojure.test :as ct]
    [clojure.spec.alpha :as s]
@@ -9,7 +11,8 @@
   (:gen-class))
 
 ;; Spec out a 0 arity function
-(s/fdef get-42 :args (s/cat) :ret int? :fn #(= 42 (:ret %)))
+(t/tc-ignore
+ (s/fdef get-42 :args (s/cat) :ret int? :fn #(= 42 (:ret %))))
 (defn get-42 [] 42)
 ;; instrument can apply to future invocations, but the return types
 ;; are only ever validated during the check calls (which also will
@@ -17,15 +20,24 @@
 ;; generative testing stuff, and for some input types, needs more fine
 ;; grained inputs via a generator (if test.check isn't included, it'll
 ;; be a different stack trace/error there).
-(st/instrument `get-42)
-(st/check `get-42)
+(t/tc-ignore
+ (st/instrument `get-42)
+ (st/check `get-42))
 
 ;; Spec out a 0 arity function that will fail the spec
-(s/fdef yget-42 :args (s/cat) :ret int? ;; :fn #(= 42 (:ret %))
-        )
+(t/tc-ignore
+ (s/fdef yget-42 :args (s/cat) :ret int? ;; :fn #(= 42 (:ret %))
+         ))
 (defn yget-42 [] "42")
-(st/instrument `yget-42)
-(st/check `yget-42)
+(t/tc-ignore
+ (st/instrument `yget-42)
+ (st/check `yget-42))
+
+(defn lint []
+  (t/tc-ignore (st/instrument))
+  (t/check-ns)
+  ;; (require 'typespec.core :reload)
+  )
 
 (defn -main
   "I don't do a whole lot ... yet."
