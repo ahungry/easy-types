@@ -11,6 +11,12 @@
 ;; Spec out a 0 arity function
 (s/fdef get-42 :args (s/cat) :ret int? :fn #(= 42 (:ret %)))
 (defn get-42 [] 42)
+;; instrument can apply to future invocations, but the return types
+;; are only ever validated during the check calls (which also will
+;; only work if test.check is in deps) check will work with the
+;; generative testing stuff, and for some input types, needs more fine
+;; grained inputs via a generator (if test.check isn't included, it'll
+;; be a different stack trace/error there).
 (st/instrument `get-42)
 (st/check `get-42)
 
